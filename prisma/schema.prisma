@@ -1,0 +1,996 @@
+// ============================================================================
+// Schéma Prisma — Plateforme Intégrée de Gestion Immobilière
+// Dérivé de schema.sql v1.0 (PostgreSQL 16, 35 tables validées)
+//
+// Auteur  : DIABATE Oumarou — Chef de Service Customer Support N1,
+//           DATACONNECT AFRICA | Ingénieur Système & Infrastructure Cloud /
+//           System Architect | Expert Solutions ICT (Cloud, Système,
+//           Cybersécurité)
+// Date    : 05 août 2026
+//
+// Conventions :
+//  * Montants en BigInt (FCFA, sans décimales) — jamais Float.
+//  * UUID générés côté application (v7) pour le support hors-ligne mobile.
+//  * Les CHECK légaux (plafonds loi n°2019-576), la contrainte d'exclusion
+//    des créneaux et les triggers de garde ne sont pas exprimables en Prisma :
+//    ils sont appliqués par la migration SQL `prisma/migrations/*_contraintes_metier`.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================== ÉNUMÉRATIONS ================================
+
+enum StatutAgence {
+  active
+  suspendue
+}
+enum FrequenceReversement {
+  immediat
+  hebdomadaire
+  mensuel
+}
+enum StatutUtilisateur {
+  actif
+  suspendu
+  supprime
+}
+enum RoleUtilisateur {
+  admin
+  agence
+  proprietaire
+  locataire
+  agent
+}
+enum TypePieceKyc {
+  cni
+  passeport
+  titre_propriete
+  mandat_gestion
+  selfie
+}
+enum StatutKyc {
+  soumis
+  verifie
+  rejete
+}
+enum TypeBien {
+  maison
+  appartement
+  studio
+  terrain
+  bureau
+  commerce
+}
+enum StatutBien {
+  disponible
+  reserve
+  loue
+  vendu
+}
+enum TypeTransaction {
+  location
+  vente
+}
+enum StatutAnnonce {
+  brouillon
+  soumise
+  en_moderation
+  publiee
+  rejetee
+  expiree
+  retiree
+}
+enum StatutCreneau {
+  ouvert
+  ferme
+}
+enum StatutRdv {
+  demande
+  confirme
+  effectue
+  annule
+  no_show
+}
+enum StatutDossier {
+  incomplet
+  complet
+}
+enum TypePieceDossier {
+  identite
+  revenus
+  attestation_employeur
+  garant_identite
+  garant_engagement
+}
+enum StatutPiece {
+  soumise
+  validee
+  rejetee
+}
+enum StatutCandidature {
+  soumise
+  en_examen
+  acceptee
+  refusee
+  liste_attente
+  retiree
+}
+enum TypeModeleContrat {
+  bail_habitation
+  bail_commercial
+  mandat_gestion
+  compromis
+}
+enum StatutContrat {
+  genere
+  en_signature
+  signe
+  actif
+  en_preavis
+  termine
+  resilie
+}
+enum RoleSignataire {
+  bailleur
+  locataire
+}
+enum TypeEcheance {
+  loyer
+  caution
+  avance
+  frais_agence
+  charges
+  penalite
+}
+enum StatutEcheance {
+  a_venir
+  due
+  payee
+  partielle
+  en_retard
+  annulee
+}
+enum MoyenPaiement {
+  orange_money
+  mtn_momo
+  moov_money
+  wave
+  carte
+}
+enum StatutPaiement {
+  initie
+  en_attente
+  confirme
+  echoue
+  expire
+  rembourse
+}
+enum StatutSequestre {
+  actif
+  gele
+  en_restitution
+  clos
+}
+enum TypeMvtSequestre {
+  depot
+  retenue
+  restitution
+  gel
+  degel
+}
+enum StatutReversement {
+  prepare
+  execute
+  echoue
+}
+enum StatutCommission {
+  acquise
+  payee
+}
+enum CategorieMaintenance {
+  plomberie
+  electricite
+  serrurerie
+  gros_oeuvre
+  autre
+}
+enum StatutMaintenance {
+  declare
+  pris_en_charge
+  resolu
+  rejete
+}
+enum TypeLitige {
+  caution
+  impaye
+  etat_bien
+  annonce
+}
+enum StatutLitige {
+  ouvert
+  instruction
+  decide
+  clos
+}
+enum CanalNotification {
+  push
+  email
+  sms
+}
+enum StatutNotification {
+  en_attente
+  envoyee
+  echec
+  lue
+}
+
+// ====================== DOMAINE 1 — RÉFÉRENTIEL & TENANTS ===================
+
+/// Plafonds légaux configurables par pays.
+/// Défaut CI : 2 mois de caution + 2 mois d'avance (loi n°2019-576).
+model ParametreLegal {
+  pays                          String   @id @db.Char(2)
+  cautionMaxMois                Int      @default(2) @map("caution_max_mois") @db.SmallInt
+  avanceMaxMois                 Int      @default(2) @map("avance_max_mois") @db.SmallInt
+  totalEntreeMaxMois            Int      @default(4) @map("total_entree_max_mois") @db.SmallInt
+  delaiRestitutionCautionJours  Int      @default(30) @map("delai_restitution_caution_jours") @db.SmallInt
+  preavisLocataireDefautJours   Int      @default(30) @map("preavis_locataire_defaut_jours") @db.SmallInt
+  preavisBailleurDefautJours    Int      @default(90) @map("preavis_bailleur_defaut_jours") @db.SmallInt
+  createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  agences Agence[]
+
+  @@map("parametre_legal")
+}
+
+model Agence {
+  id                    String                @id @default(uuid()) @db.Uuid
+  nom                   String                @db.VarChar(160)
+  email                 String?               @db.VarChar(255)
+  telephone             String?               @db.VarChar(20)
+  pays                  String                @default("CI") @db.Char(2)
+  fraisAgencePct        Decimal               @default(10.00) @map("frais_agence_pct") @db.Decimal(5, 2)
+  frequenceReversement  FrequenceReversement  @default(mensuel) @map("frequence_reversement")
+  statut                StatutAgence          @default(active)
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  parametreLegal ParametreLegal    @relation(fields: [pays], references: [pays])
+  roles          UtilisateurRole[]
+  biens          Bien[]
+  modeles        ModeleContrat[]
+  contrats       Contrat[]
+  quittances     Quittance[]
+  reversements   Reversement[]
+  commissions    Commission[]
+
+  @@map("agence")
+}
+
+// ====================== DOMAINE 2 — UTILISATEURS & IDENTITÉ =================
+
+/// Compte unique global multi-rôles (RG-001). Identifiant principal : téléphone.
+model Utilisateur {
+  id                    String             @id @default(uuid()) @db.Uuid
+  telephone             String             @unique @db.VarChar(20)
+  email                 String?            @unique @db.VarChar(255)
+  motDePasseHash        String             @map("mot_de_passe_hash") @db.VarChar(255)
+  nomComplet            String             @map("nom_complet") @db.VarChar(160)
+  telephoneVerifieLe    DateTime?          @map("telephone_verifie_le") @db.Timestamptz(6)
+  emailVerifieLe        DateTime?          @map("email_verifie_le") @db.Timestamptz(6)
+  /// Secret TOTP chiffré applicativement (AES-256-GCM) — jamais en clair.
+  totpSecretChiffre     String?            @map("totp_secret_chiffre")
+  langue                String             @default("fr") @db.Char(2)
+  /// RG-RDV-A : suspension temporaire de la prise de RDV après 3 no-show / 90 j.
+  suspensionRdvJusquAu  DateTime?          @map("suspension_rdv_jusqu_au") @db.Timestamptz(6)
+  statut                StatutUtilisateur  @default(actif)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  roles              UtilisateurRole[]
+  kycVerifications   KycVerification[]     @relation("KycUtilisateur")
+  kycVerifiees       KycVerification[]     @relation("KycVerificateur")
+  biens              Bien[]
+  documentsVerifies  BienDocument[]
+  annoncesModerees   Annonce[]
+  creneauxCrees      CreneauVisite[]
+  rdvVisiteur        RendezVous[]          @relation("RdvVisiteur")
+  rdvAnnules         RendezVous[]          @relation("RdvAnnuleur")
+  rdvMarques         RendezVous[]          @relation("RdvMarqueur")
+  dossier            Dossier?
+  candidaturesDecidees Candidature[]
+  contratsBailleur   Contrat[]             @relation("ContratBailleur")
+  contratsLocataire  Contrat[]             @relation("ContratLocataire")
+  contratsPreavis    Contrat[]             @relation("ContratPreavis")
+  signatures         Signature[]
+  paiements          Paiement[]
+  reversements       Reversement[]
+  commissions        Commission[]
+  maintenances       DemandeMaintenance[]
+  litigesOuverts     Litige[]              @relation("LitigeOuvreur")
+  litigesDecides     Litige[]              @relation("LitigeDecideur")
+  messagesLitige     LitigeMessage[]
+  notifications      Notification[]
+  preferences        PreferenceNotification[]
+  otpCodes           OtpCode[]
+
+  @@map("utilisateur")
+}
+
+model UtilisateurRole {
+  id            String          @id @default(uuid()) @db.Uuid
+  utilisateurId String          @map("utilisateur_id") @db.Uuid
+  role          RoleUtilisateur
+  /// Renseigné pour admin/agence/agent ; NULL pour les rôles clients globaux.
+  agenceId      String?         @map("agence_id") @db.Uuid
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  agence      Agence?     @relation(fields: [agenceId], references: [id])
+
+  @@unique([utilisateurId, role, agenceId])
+  @@map("utilisateur_role")
+}
+
+/// Codes OTP (vérification téléphone, signature électronique, 2FA).
+model OtpCode {
+  id            String    @id @default(uuid()) @db.Uuid
+  utilisateurId String    @map("utilisateur_id") @db.Uuid
+  /// Hash du code — le code en clair n'est jamais stocké.
+  codeHash      String    @map("code_hash") @db.VarChar(255)
+  usage         String    @db.VarChar(40) // 'verification_tel' | 'signature' | 'connexion_2fa'
+  contexteId    String?   @map("contexte_id") @db.Uuid // ex. contrat à signer
+  expireLe      DateTime  @map("expire_le") @db.Timestamptz(6)
+  tentatives    Int       @default(0) @db.SmallInt
+  consommeLe    DateTime? @map("consomme_le") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@index([utilisateurId, usage])
+  @@map("otp_code")
+}
+
+/// KYC (RG-002) : requis pour publier un bien et signer un contrat.
+model KycVerification {
+  id                 String        @id @default(uuid()) @db.Uuid
+  utilisateurId      String        @map("utilisateur_id") @db.Uuid
+  typePiece          TypePieceKyc  @map("type_piece")
+  /// Numéro de pièce chiffré applicativement (AES-256-GCM).
+  numeroPieceChiffre String?       @map("numero_piece_chiffre")
+  fichierUrl         String        @map("fichier_url")
+  statut             StatutKyc     @default(soumis)
+  motifRejet         String?       @map("motif_rejet")
+  verifiePar         String?       @map("verifie_par") @db.Uuid
+  verifieLe          DateTime?     @map("verifie_le") @db.Timestamptz(6)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  utilisateur  Utilisateur  @relation("KycUtilisateur", fields: [utilisateurId], references: [id], onDelete: Cascade)
+  verificateur Utilisateur? @relation("KycVerificateur", fields: [verifiePar], references: [id])
+
+  @@map("kyc_verification")
+}
+
+// ====================== DOMAINE 3 — BIENS & ANNONCES ========================
+
+model Bien {
+  id             String     @id @default(uuid()) @db.Uuid
+  agenceId       String     @map("agence_id") @db.Uuid
+  proprietaireId String     @map("proprietaire_id") @db.Uuid
+  typeBien       TypeBien   @map("type_bien")
+  adresse        String     // {{bien_adresse}}
+  commune        String     @db.VarChar(80) // {{bien_commune}}
+  quartier       String?    @db.VarChar(80) // {{bien_quartier}}
+  latitude       Decimal?   @db.Decimal(9, 6)
+  longitude      Decimal?   @db.Decimal(9, 6)
+  superficieM2   Decimal?   @map("superficie_m2") @db.Decimal(8, 2)
+  nbPieces       Int?       @map("nb_pieces") @db.SmallInt // {{bien_nb_pieces}}
+  nbChambres     Int?       @map("nb_chambres") @db.SmallInt
+  nbSallesEau    Int?       @map("nb_salles_eau") @db.SmallInt
+  meuble         Boolean    @default(false) // {{bien_meuble_oui_non}}
+  dependances    String?    // {{bien_dependances}}
+  attributs      Json       @default("{}")
+  statut         StatutBien @default(disponible)
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  agence       Agence               @relation(fields: [agenceId], references: [id])
+  proprietaire Utilisateur          @relation(fields: [proprietaireId], references: [id])
+  photos       BienPhoto[]
+  documents    BienDocument[]
+  equipements  BienEquipement[]
+  annonces     Annonce[]
+  creneaux     CreneauVisite[]
+  contrats     Contrat[]
+  maintenances DemandeMaintenance[]
+
+  @@index([commune, quartier])
+  @@index([proprietaireId])
+  @@index([agenceId])
+  @@map("bien")
+}
+
+model BienPhoto {
+  id           String   @id @default(uuid()) @db.Uuid
+  bienId       String   @map("bien_id") @db.Uuid
+  url          String
+  ordre        Int      @default(0) @db.SmallInt
+  isCouverture Boolean  @default(false) @map("is_couverture")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  bien Bien @relation(fields: [bienId], references: [id], onDelete: Cascade)
+
+  @@map("bien_photo")
+}
+
+model BienDocument {
+  id         String       @id @default(uuid()) @db.Uuid
+  bienId     String       @map("bien_id") @db.Uuid
+  typePiece  TypePieceKyc @map("type_piece")
+  fichierUrl String       @map("fichier_url")
+  verifieLe  DateTime?    @map("verifie_le") @db.Timestamptz(6)
+  verifiePar String?      @map("verifie_par") @db.Uuid
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  bien         Bien         @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  verificateur Utilisateur? @relation(fields: [verifiePar], references: [id])
+
+  @@map("bien_document")
+}
+
+model Equipement {
+  id      String @id @default(uuid()) @db.Uuid
+  code    String @unique @db.VarChar(40)
+  libelle String @db.VarChar(120)
+
+  biens BienEquipement[]
+
+  @@map("equipement")
+}
+
+model BienEquipement {
+  bienId       String @map("bien_id") @db.Uuid
+  equipementId String @map("equipement_id") @db.Uuid
+
+  bien       Bien       @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  equipement Equipement @relation(fields: [equipementId], references: [id], onDelete: Cascade)
+
+  @@id([bienId, equipementId])
+  @@map("bien_equipement")
+}
+
+/// Annonce séparée du bien : un bien vit plusieurs annonces (relocation, vente).
+model Annonce {
+  id                 String          @id @default(uuid()) @db.Uuid
+  bienId             String          @map("bien_id") @db.Uuid
+  transaction        TypeTransaction
+  titre              String          @db.VarChar(160)
+  description        String?
+  loyerMontant       BigInt?         @map("loyer_montant")
+  prixVente          BigInt?         @map("prix_vente")
+  chargesMontant     BigInt          @default(0) @map("charges_montant")
+  /// CHECK ≤ 2 (loi n°2019-576) posé par migration SQL.
+  cautionNbMois      Int             @default(0) @map("caution_nb_mois") @db.SmallInt
+  avanceNbMois       Int             @default(0) @map("avance_nb_mois") @db.SmallInt
+  fraisAgenceMontant BigInt          @default(0) @map("frais_agence_montant")
+  disponibleLe       DateTime?       @map("disponible_le") @db.Date
+  statut             StatutAnnonce   @default(brouillon)
+  motifRejet         String?         @map("motif_rejet")
+  modereePar         String?         @map("moderee_par") @db.Uuid
+  modereeLe          DateTime?       @map("moderee_le") @db.Timestamptz(6)
+  publieeLe          DateTime?       @map("publiee_le") @db.Timestamptz(6)
+  expireLe           DateTime?       @map("expire_le") @db.Timestamptz(6)
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  bien         Bien          @relation(fields: [bienId], references: [id])
+  moderateur   Utilisateur?  @relation(fields: [modereePar], references: [id])
+  rendezVous   RendezVous[]
+  candidatures Candidature[]
+  contrats     Contrat[]
+
+  @@index([bienId])
+  @@index([transaction, loyerMontant])
+  @@map("annonce")
+}
+
+// ====================== DOMAINE 4 — VISITES =================================
+
+model CreneauVisite {
+  id        String         @id @default(uuid()) @db.Uuid
+  bienId    String         @map("bien_id") @db.Uuid
+  debut     DateTime       @db.Timestamptz(6)
+  fin       DateTime       @db.Timestamptz(6)
+  capacite  Int            @default(1) @db.SmallInt
+  creePar   String         @map("cree_par") @db.Uuid
+  statut    StatutCreneau  @default(ouvert)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  bien       Bien         @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  createur   Utilisateur  @relation(fields: [creePar], references: [id])
+  rendezVous RendezVous[]
+
+  @@index([bienId, debut])
+  @@map("creneau_visite")
+}
+
+model RendezVous {
+  id               String     @id @default(uuid()) @db.Uuid
+  creneauId        String     @map("creneau_id") @db.Uuid
+  annonceId        String     @map("annonce_id") @db.Uuid
+  visiteurId       String     @map("visiteur_id") @db.Uuid
+  statut           StatutRdv  @default(demande)
+  annulePar        String?    @map("annule_par") @db.Uuid
+  annuleLe         DateTime?  @map("annule_le") @db.Timestamptz(6)
+  motifAnnulation  String?    @map("motif_annulation")
+  compteRendu      String?    @map("compte_rendu")
+  marquePar        String?    @map("marque_par") @db.Uuid
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  creneau     CreneauVisite @relation(fields: [creneauId], references: [id])
+  annonce     Annonce       @relation(fields: [annonceId], references: [id])
+  visiteur    Utilisateur   @relation("RdvVisiteur", fields: [visiteurId], references: [id])
+  annuleur    Utilisateur?  @relation("RdvAnnuleur", fields: [annulePar], references: [id])
+  marqueur    Utilisateur?  @relation("RdvMarqueur", fields: [marquePar], references: [id])
+  commissions Commission[]
+
+  @@unique([creneauId, visiteurId])
+  @@index([visiteurId, statut])
+  @@map("rendez_vous")
+}
+
+// ====================== DOMAINE 5 — CANDIDATURES ============================
+
+/// Dossier numérique réutilisable : un seul par locataire (REQ-DOS-02).
+model Dossier {
+  id           String        @id @default(uuid()) @db.Uuid
+  locataireId  String        @unique @map("locataire_id") @db.Uuid
+  statut       StatutDossier @default(incomplet)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  locataire    Utilisateur    @relation(fields: [locataireId], references: [id], onDelete: Cascade)
+  pieces       DossierPiece[]
+  candidatures Candidature[]
+
+  @@map("dossier")
+}
+
+model DossierPiece {
+  id         String            @id @default(uuid()) @db.Uuid
+  dossierId  String            @map("dossier_id") @db.Uuid
+  typePiece  TypePieceDossier  @map("type_piece")
+  fichierUrl String            @map("fichier_url")
+  statut     StatutPiece       @default(soumise)
+  motifRejet String?           @map("motif_rejet")
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  dossier Dossier @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+
+  @@map("dossier_piece")
+}
+
+/// Liste fermée de motifs de refus licites (anti-discrimination, REQ-DOS-03).
+model MotifRefus {
+  code    String @id @db.VarChar(40)
+  libelle String @db.VarChar(200)
+
+  candidatures Candidature[]
+
+  @@map("motif_refus")
+}
+
+model Candidature {
+  id                        String             @id @default(uuid()) @db.Uuid
+  dossierId                 String             @map("dossier_id") @db.Uuid
+  annonceId                 String             @map("annonce_id") @db.Uuid
+  statut                    StatutCandidature  @default(soumise)
+  motifRefusCode            String?            @map("motif_refus_code") @db.VarChar(40)
+  /// Consentement explicite au partage des pièces avec le bailleur (loi 2013-450).
+  consentementPartagePieces Boolean            @default(false) @map("consentement_partage_pieces")
+  consentementLe            DateTime?          @map("consentement_le") @db.Timestamptz(6)
+  decideePar                String?            @map("decidee_par") @db.Uuid
+  decideeLe                 DateTime?          @map("decidee_le") @db.Timestamptz(6)
+  createdAt                 DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  dossier    Dossier      @relation(fields: [dossierId], references: [id])
+  annonce    Annonce      @relation(fields: [annonceId], references: [id])
+  motifRefus MotifRefus?  @relation(fields: [motifRefusCode], references: [code])
+  decideur   Utilisateur? @relation(fields: [decideePar], references: [id])
+  contrats   Contrat[]
+
+  @@unique([dossierId, annonceId])
+  @@map("candidature")
+}
+
+// ====================== DOMAINE 6 — CONTRATS ================================
+
+model ModeleContrat {
+  id              String             @id @default(uuid()) @db.Uuid
+  /// NULL = modèle plateforme par défaut.
+  agenceId        String?            @map("agence_id") @db.Uuid
+  type            TypeModeleContrat
+  /// Gabarit avec variables {{...}} (cf. modèle de bail livré).
+  contenuTemplate String             @map("contenu_template")
+  version         Int                @default(1)
+  actif           Boolean            @default(true)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  agence   Agence?   @relation(fields: [agenceId], references: [id])
+  contrats Contrat[]
+
+  @@unique([agenceId, type, version])
+  @@map("modele_contrat")
+}
+
+/// Miroir exact des variables {{...}} du modèle de bail (REQ-CTR-01).
+model Contrat {
+  id                            String         @id @default(uuid()) @db.Uuid
+  reference                     String         @unique @db.VarChar(30) // {{contrat_ref}}
+  agenceId                      String         @map("agence_id") @db.Uuid
+  annonceId                     String         @map("annonce_id") @db.Uuid
+  bienId                        String         @map("bien_id") @db.Uuid
+  bailleurId                    String         @map("bailleur_id") @db.Uuid
+  locataireId                   String         @map("locataire_id") @db.Uuid
+  candidatureId                 String?        @map("candidature_id") @db.Uuid
+  modeleId                      String         @map("modele_id") @db.Uuid
+  loyerMontant                  BigInt         @map("loyer_montant")                   // {{loyer_montant}}
+  chargesMontant                BigInt         @default(0) @map("charges_montant")
+  jourEcheance                  Int            @map("jour_echeance") @db.SmallInt      // {{jour_echeance}}
+  cautionMontant                BigInt         @default(0) @map("caution_montant")     // {{caution_montant}}
+  cautionNbMois                 Int            @default(0) @map("caution_nb_mois") @db.SmallInt
+  avanceMontant                 BigInt         @default(0) @map("avance_montant")      // {{avance_montant}}
+  avanceNbMois                  Int            @default(0) @map("avance_nb_mois") @db.SmallInt
+  fraisAgenceMontant            BigInt         @default(0) @map("frais_agence_montant")
+  dureeMois                     Int            @map("duree_mois") @db.SmallInt         // {{duree_bail}}
+  datePriseEffet                DateTime       @map("date_prise_effet") @db.Date       // {{date_prise_effet}}
+  preavisLocataireJours         Int            @map("preavis_locataire_jours") @db.SmallInt
+  preavisBailleurJours          Int            @map("preavis_bailleur_jours") @db.SmallInt
+  delaiRestitutionCautionJours  Int            @map("delai_restitution_caution_jours") @db.SmallInt
+  joursTolerance                Int            @default(5) @map("jours_tolerance") @db.SmallInt
+  penaliteRetardMontant         BigInt         @default(0) @map("penalite_retard_montant")
+  statut                        StatutContrat  @default(genere)
+  documentUrl                   String?        @map("document_url")
+  /// Empreinte SHA-256 du PDF signé — preuve d'intégrité (art. 14 du bail).
+  documentEmpreinteSha256       String?        @map("document_empreinte_sha256") @db.Char(64)
+  preavisDonnePar               String?        @map("preavis_donne_par") @db.Uuid
+  preavisLe                     DateTime?      @map("preavis_le") @db.Timestamptz(6)
+  finEffectiveLe                DateTime?      @map("fin_effective_le") @db.Date
+  createdAt                     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  agence          Agence               @relation(fields: [agenceId], references: [id])
+  annonce         Annonce              @relation(fields: [annonceId], references: [id])
+  bien            Bien                 @relation(fields: [bienId], references: [id])
+  bailleur        Utilisateur          @relation("ContratBailleur", fields: [bailleurId], references: [id])
+  locataire       Utilisateur          @relation("ContratLocataire", fields: [locataireId], references: [id])
+  candidature     Candidature?         @relation(fields: [candidatureId], references: [id])
+  modele          ModeleContrat        @relation(fields: [modeleId], references: [id])
+  preavisAuteur   Utilisateur?         @relation("ContratPreavis", fields: [preavisDonnePar], references: [id])
+  signatures      Signature[]
+  echeances       Echeance[]
+  paiements       Paiement[]
+  quittances      Quittance[]
+  sequestre       CompteSequestre?
+  litiges         Litige[]
+  maintenances    DemandeMaintenance[]
+  commissions     Commission[]
+
+  @@index([bailleurId, statut])
+  @@index([locataireId, statut])
+  @@index([agenceId])
+  @@map("contrat")
+}
+
+/// Procès-verbal de signature électronique (REQ-CTR-02, art. 14 du bail).
+model Signature {
+  id                String          @id @default(uuid()) @db.Uuid
+  contratId         String          @map("contrat_id") @db.Uuid
+  signataireId      String          @map("signataire_id") @db.Uuid
+  roleSignataire    RoleSignataire  @map("role_signataire")
+  otpVerifieLe      DateTime        @map("otp_verifie_le") @db.Timestamptz(6)
+  horodatage        DateTime        @default(now()) @db.Timestamptz(6)
+  empreinteDocument String          @map("empreinte_document") @db.Char(64)
+  adresseIp         String?         @map("adresse_ip") @db.Inet
+  userAgent         String?         @map("user_agent")
+
+  contrat    Contrat     @relation(fields: [contratId], references: [id], onDelete: Cascade)
+  signataire Utilisateur @relation(fields: [signataireId], references: [id])
+
+  @@unique([contratId, roleSignataire])
+  @@map("signature")
+}
+
+// ====================== DOMAINE 7 — FLUX FINANCIERS =========================
+
+model Echeance {
+  id                String          @id @default(uuid()) @db.Uuid
+  contratId         String          @map("contrat_id") @db.Uuid
+  type              TypeEcheance
+  /// 1er du mois concerné (NULL pour caution / frais).
+  periode           DateTime?       @db.Date
+  montantDu         BigInt          @map("montant_du")
+  montantPaye       BigInt          @default(0) @map("montant_paye")
+  dateEcheance      DateTime        @map("date_echeance") @db.Date
+  statut            StatutEcheance  @default(a_venir)
+  relanceNiveau     Int             @default(0) @map("relance_niveau") @db.SmallInt
+  derniereRelanceLe DateTime?       @map("derniere_relance_le") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  contrat   Contrat            @relation(fields: [contratId], references: [id], onDelete: Cascade)
+  paiements PaiementEcheance[]
+
+  @@unique([contratId, type, periode])
+  @@index([statut, dateEcheance])
+  @@index([contratId, statut])
+  @@map("echeance")
+}
+
+model Paiement {
+  id                  String          @id @default(uuid()) @db.Uuid
+  contratId           String?         @map("contrat_id") @db.Uuid
+  payeurId            String          @map("payeur_id") @db.Uuid
+  montant             BigInt
+  devise              String          @default("XOF") @db.Char(3)
+  moyen               MoyenPaiement
+  agregateur          String?         @db.VarChar(40)
+  /// Clé d'idempotence envoyée au PSP — protège des doubles débits (REQ-PAY-05).
+  referenceInterne    String          @unique @map("reference_interne") @db.VarChar(64)
+  referenceAgregateur String?         @map("reference_agregateur") @db.VarChar(128)
+  statut              StatutPaiement  @default(initie)
+  webhookRecuLe       DateTime?       @map("webhook_recu_le") @db.Timestamptz(6)
+  reconcilie          Boolean         @default(false)
+  reconcilieLe        DateTime?       @map("reconcilie_le") @db.Timestamptz(6)
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  contrat      Contrat?               @relation(fields: [contratId], references: [id])
+  payeur       Utilisateur            @relation(fields: [payeurId], references: [id])
+  echeances    PaiementEcheance[]
+  quittance    Quittance?
+  reversements ReversementPaiement[]
+
+  @@index([contratId])
+  @@index([statut, createdAt])
+  @@map("paiement")
+}
+
+/// Ventilation : un paiement peut couvrir plusieurs échéances (REQ-PAY-04).
+model PaiementEcheance {
+  paiementId     String @map("paiement_id") @db.Uuid
+  echeanceId     String @map("echeance_id") @db.Uuid
+  montantAffecte BigInt @map("montant_affecte")
+
+  paiement Paiement @relation(fields: [paiementId], references: [id], onDelete: Cascade)
+  echeance Echeance @relation(fields: [echeanceId], references: [id])
+
+  @@id([paiementId, echeanceId])
+  @@map("paiement_echeance")
+}
+
+model Quittance {
+  id         String   @id @default(uuid()) @db.Uuid
+  paiementId String   @unique @map("paiement_id") @db.Uuid
+  contratId  String   @map("contrat_id") @db.Uuid
+  agenceId   String   @map("agence_id") @db.Uuid
+  numero     String   @db.VarChar(30)
+  pdfUrl     String   @map("pdf_url")
+  genereeLe  DateTime @default(now()) @map("generee_le") @db.Timestamptz(6)
+
+  paiement Paiement @relation(fields: [paiementId], references: [id])
+  contrat  Contrat  @relation(fields: [contratId], references: [id])
+  agence   Agence   @relation(fields: [agenceId], references: [id])
+
+  @@unique([agenceId, numero])
+  @@map("quittance")
+}
+
+/// Séquestre de caution — un compte par contrat (REQ-PAY-08).
+model CompteSequestre {
+  id             String           @id @default(uuid()) @db.Uuid
+  contratId      String           @unique @map("contrat_id") @db.Uuid
+  montantInitial BigInt           @map("montant_initial")
+  solde          BigInt
+  statut         StatutSequestre  @default(actif)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  contrat    Contrat               @relation(fields: [contratId], references: [id])
+  mouvements MouvementSequestre[]
+
+  @@map("compte_sequestre")
+}
+
+/// Mouvements co-validés bailleur + locataire, ou tranchés par litige (RG-PAY-A).
+model MouvementSequestre {
+  id                String             @id @default(uuid()) @db.Uuid
+  compteId          String             @map("compte_id") @db.Uuid
+  type              TypeMvtSequestre
+  montant           BigInt
+  justificatifUrl   String?            @map("justificatif_url")
+  litigeId          String?            @map("litige_id") @db.Uuid
+  valideBailleurLe  DateTime?          @map("valide_bailleur_le") @db.Timestamptz(6)
+  valideLocataireLe DateTime?          @map("valide_locataire_le") @db.Timestamptz(6)
+  executeLe         DateTime?          @map("execute_le") @db.Timestamptz(6)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  compte CompteSequestre @relation(fields: [compteId], references: [id])
+  litige Litige?         @relation(fields: [litigeId], references: [id])
+
+  @@map("mouvement_sequestre")
+}
+
+model Reversement {
+  id           String              @id @default(uuid()) @db.Uuid
+  agenceId     String              @map("agence_id") @db.Uuid
+  bailleurId   String              @map("bailleur_id") @db.Uuid
+  periodeDebut DateTime            @map("periode_debut") @db.Date
+  periodeFin   DateTime            @map("periode_fin") @db.Date
+  montantBrut  BigInt              @map("montant_brut")
+  fraisAgence  BigInt              @default(0) @map("frais_agence")
+  montantNet   BigInt              @map("montant_net")
+  moyen        MoyenPaiement
+  reference    String?             @unique @db.VarChar(64)
+  statut       StatutReversement   @default(prepare)
+  releveUrl    String?             @map("releve_url")
+  executeLe    DateTime?           @map("execute_le") @db.Timestamptz(6)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  agence    Agence                @relation(fields: [agenceId], references: [id])
+  bailleur  Utilisateur           @relation(fields: [bailleurId], references: [id])
+  paiements ReversementPaiement[]
+
+  @@map("reversement")
+}
+
+model ReversementPaiement {
+  reversementId String @map("reversement_id") @db.Uuid
+  paiementId    String @map("paiement_id") @db.Uuid
+
+  reversement Reversement @relation(fields: [reversementId], references: [id], onDelete: Cascade)
+  paiement    Paiement    @relation(fields: [paiementId], references: [id])
+
+  @@id([reversementId, paiementId])
+  @@map("reversement_paiement")
+}
+
+model Commission {
+  id           String            @id @default(uuid()) @db.Uuid
+  agenceId     String            @map("agence_id") @db.Uuid
+  agentId      String            @map("agent_id") @db.Uuid
+  contratId    String?           @map("contrat_id") @db.Uuid
+  rendezVousId String?           @map("rendez_vous_id") @db.Uuid
+  montant      BigInt
+  statut       StatutCommission  @default(acquise)
+  payeeLe      DateTime?         @map("payee_le") @db.Timestamptz(6)
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  agence     Agence       @relation(fields: [agenceId], references: [id])
+  agent      Utilisateur  @relation(fields: [agentId], references: [id])
+  contrat    Contrat?     @relation(fields: [contratId], references: [id])
+  rendezVous RendezVous?  @relation(fields: [rendezVousId], references: [id])
+
+  @@map("commission")
+}
+
+// ====================== DOMAINE 8 — SUPPORT & TRANSVERSE ====================
+
+model DemandeMaintenance {
+  id          String                @id @default(uuid()) @db.Uuid
+  bienId      String                @map("bien_id") @db.Uuid
+  contratId   String?               @map("contrat_id") @db.Uuid
+  declarantId String                @map("declarant_id") @db.Uuid
+  categorie   CategorieMaintenance
+  description String
+  photos      Json                  @default("[]")
+  statut      StatutMaintenance     @default(declare)
+  motifRejet  String?               @map("motif_rejet")
+  resoluLe    DateTime?             @map("resolu_le") @db.Timestamptz(6)
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  bien      Bien        @relation(fields: [bienId], references: [id])
+  contrat   Contrat?    @relation(fields: [contratId], references: [id])
+  declarant Utilisateur @relation(fields: [declarantId], references: [id])
+
+  @@map("demande_maintenance")
+}
+
+model Litige {
+  id          String        @id @default(uuid()) @db.Uuid
+  contratId   String        @map("contrat_id") @db.Uuid
+  type        TypeLitige
+  ouvertPar   String        @map("ouvert_par") @db.Uuid
+  statut      StatutLitige  @default(ouvert)
+  description String
+  decision    String?
+  decidePar   String?       @map("decide_par") @db.Uuid
+  decideLe    DateTime?     @map("decide_le") @db.Timestamptz(6)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  contrat    Contrat              @relation(fields: [contratId], references: [id])
+  ouvreur    Utilisateur          @relation("LitigeOuvreur", fields: [ouvertPar], references: [id])
+  decideur   Utilisateur?         @relation("LitigeDecideur", fields: [decidePar], references: [id])
+  messages   LitigeMessage[]
+  mouvements MouvementSequestre[]
+
+  @@map("litige")
+}
+
+model LitigeMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  litigeId  String   @map("litige_id") @db.Uuid
+  auteurId  String   @map("auteur_id") @db.Uuid
+  contenu   String
+  pieces    Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  litige Litige      @relation(fields: [litigeId], references: [id], onDelete: Cascade)
+  auteur Utilisateur @relation(fields: [auteurId], references: [id])
+
+  @@map("litige_message")
+}
+
+model Notification {
+  id            String               @id @default(uuid()) @db.Uuid
+  utilisateurId String               @map("utilisateur_id") @db.Uuid
+  canal         CanalNotification
+  typeEvenement String               @map("type_evenement") @db.VarChar(60)
+  titre         String               @db.VarChar(160)
+  contenu       String
+  entiteType    String?              @map("entite_type") @db.VarChar(40)
+  entiteId      String?              @map("entite_id") @db.Uuid
+  statut        StatutNotification   @default(en_attente)
+  envoyeeLe     DateTime?            @map("envoyee_le") @db.Timestamptz(6)
+  lueLe         DateTime?            @map("lue_le") @db.Timestamptz(6)
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@index([utilisateurId, createdAt])
+  @@map("notification")
+}
+
+model PreferenceNotification {
+  utilisateurId String             @map("utilisateur_id") @db.Uuid
+  typeEvenement String             @map("type_evenement") @db.VarChar(60)
+  canal         CanalNotification
+  actif         Boolean            @default(true)
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@id([utilisateurId, typeEvenement, canal])
+  @@map("preference_notification")
+}
+
+/// Journal d'audit immuable (append-only) — REVOKE UPDATE/DELETE en migration.
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  agenceId      String?  @map("agence_id") @db.Uuid
+  utilisateurId String?  @map("utilisateur_id") @db.Uuid
+  action        String   @db.VarChar(80)
+  entiteType    String   @map("entite_type") @db.VarChar(40)
+  entiteId      String?  @map("entite_id") @db.Uuid
+  donneesAvant  Json?    @map("donnees_avant")
+  donneesApres  Json?    @map("donnees_apres")
+  adresseIp     String?  @map("adresse_ip") @db.Inet
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entiteType, entiteId])
+  @@index([createdAt])
+  @@map("audit_log")
+}

@@ -1,0 +1,59 @@
+<!--
+  Gabarit du contrat de bail à usage d'habitation — Côte d'Ivoire (loi n°2019-576)
+  Les variables {{...}} sont substituées à la génération, puis le HTML est rendu
+  en PDF par Gotenberg. Structure identique au modèle Word livré.
+  Auteur : DIABATE Oumarou — DATACONNECT AFRICA · 05 août 2026
+-->
+<h1>CONTRAT DE BAIL À USAGE D'HABITATION</h1>
+<p class="sous-titre">République de Côte d'Ivoire — Code de la Construction et de l'Habitat (loi n°2019-576)</p>
+<p class="ref">Référence : {{contrat_ref}} • Bien : {{bien_ref}} • Généré le {{date_generation}}</p>
+
+<h2>Entre les soussignés</h2>
+<p><strong>Le Bailleur :</strong> {{bailleur_nom_complet}} — CNI/Passeport {{bailleur_piece_identite}} —
+   {{bailleur_adresse}} — {{bailleur_telephone}} — {{bailleur_email}}</p>
+<p><strong>Le Locataire :</strong> {{locataire_nom_complet}} — CNI/Passeport {{locataire_piece_identite}} —
+   {{locataire_adresse}} — {{locataire_telephone}} — {{locataire_email}}</p>
+
+<h2>Article 1 — Objet</h2>
+<p>Logement à usage exclusif d'habitation : {{bien_adresse}}, {{bien_commune}} — {{bien_quartier}}.
+   Type {{bien_type}}, {{bien_nb_pieces}} pièces, dépendances : {{bien_dependances}}. Meublé : {{bien_meuble_oui_non}}.</p>
+
+<h2>Article 2 — Durée et prise d'effet</h2>
+<p>Durée de {{duree_bail}}, à compter du {{date_prise_effet}}.</p>
+
+<h2>Article 3 — Loyer</h2>
+<p>Loyer mensuel de {{loyer_montant}} FCFA ({{loyer_montant_lettres}}), payable au plus tard le {{jour_echeance}}
+   de chaque mois via la plateforme. Quittance générée automatiquement à chaque paiement confirmé.</p>
+
+<h2>Article 4 — Dépôt de garantie (caution)</h2>
+<p>{{caution_montant}} FCFA, soit {{caution_nb_mois}} mois de loyer.
+   <strong>Conformément à la loi, ce montant ne peut excéder deux (2) mois de loyer.</strong>
+   Conservé sous séquestre pendant toute la durée du bail, restitué sous {{delai_restitution_caution}} jours
+   après l'état des lieux de sortie, déduction faite des sommes dues et réparations justifiées.</p>
+
+<h2>Article 5 — Avance sur loyer</h2>
+<p>{{avance_montant}} FCFA, soit {{avance_nb_mois}} mois de loyer.
+   <strong>Conformément à la loi, cette avance ne peut excéder deux (2) mois de loyer.</strong>
+   Le total exigible à la signature ne peut excéder quatre (4) mois de loyer.</p>
+
+<h2>Article 6 — Charges</h2>
+<p>À la charge du Locataire : eau, électricité, internet, ordures ménagères,
+   charges récupérables {{charges_recuperables}}. Le Bailleur supporte les grosses réparations.</p>
+
+<h2>Article 12 — Résiliation et préavis</h2>
+<p>Préavis de {{preavis_locataire}} pour le Locataire, {{preavis_bailleur}} pour le Bailleur.
+   <strong>Aucune expulsion ne peut intervenir sans décision de justice lorsque la loi impose une
+   procédure judiciaire.</strong> Retard au-delà de {{jours_tolerance}} jours : relances ;
+   pénalité éventuelle de {{penalite_retard}}, toute clause abusive étant réputée non écrite.</p>
+
+<h2>Article 14 — Signature électronique</h2>
+<p>Signature via la plateforme, signataires authentifiés par code à usage unique (OTP).
+   Procès-verbal (horodatage, identité vérifiée, empreinte du document) archivé et faisant preuve.</p>
+
+<h2>Article 15 — Protection des données</h2>
+<p>Traitement conforme à la loi n°2013-450 (autorité : ARTCI), aux seules fins d'exécution du présent contrat.</p>
+
+<p class="signatures">
+  Le Bailleur — {{bailleur_nom_complet}} — {{bailleur_signature_horodatage}}<br>
+  Le Locataire — {{locataire_nom_complet}} — {{locataire_signature_horodatage}}
+</p>

@@ -1,0 +1,46 @@
+# Environnement de développement local
+# Auteur : DIABATE Oumarou — DATACONNECT AFRICA · 05 août 2026
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: immo
+      POSTGRES_PASSWORD: immo
+      POSTGRES_DB: immo
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U immo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports: ["6379:6379"]
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  # Rendu PDF des contrats et quittances (isolé hors de l'API)
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports: ["3001:3000"]
+
+  api:
+    build: { context: ., dockerfile: docker/Dockerfile }
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://immo:immo@postgres:5432/immo?schema=public
+      REDIS_URL: redis://redis:6379
+    ports: ["3000:3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  redisdata:
