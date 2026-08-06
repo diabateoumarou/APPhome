@@ -17,8 +17,8 @@ BEGIN;
 -- Jeu de données minimal
 INSERT INTO agence (id, nom) VALUES ('a0000000-0000-0000-0000-000000000001','Agence Test');
 INSERT INTO utilisateur (id, telephone, mot_de_passe_hash, nom_complet) VALUES
- ('b0000000-0000-0000-0000-000000000001','+2250700000001','h','Bailleur Test'),
- ('b0000000-0000-0000-0000-000000000002','+2250700000002','h','Locataire Test');
+ ('b0000000-0000-0000-0000-000000000001','+2259900000001','h','Bailleur Test'),
+ ('b0000000-0000-0000-0000-000000000002','+2259900000002','h','Locataire Test');
 INSERT INTO bien (id, agence_id, proprietaire_id, type_bien, adresse, commune)
  VALUES ('c0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','b0000000-0000-0000-0000-000000000001','appartement','Rue T1','Cocody');
 INSERT INTO annonce (id, bien_id, transaction, titre, loyer_montant, caution_nb_mois, avance_nb_mois)
