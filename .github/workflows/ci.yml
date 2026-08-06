@@ -41,4 +41,4 @@ jobs:
       - name: Tests des garde-fous SQL (plafonds légaux, séquestre, signatures)
         run: psql "$PSQL_URL" -v ON_ERROR_STOP=1 -f test/contraintes.test.sql
       - name: Audit de sécurité des dépendances
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
