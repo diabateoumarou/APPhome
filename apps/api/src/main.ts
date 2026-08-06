@@ -14,7 +14,26 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  app.use(helmet());
+  // Helmet reste actif ; la CSP est assouplie uniquement pour les ressources
+  // dont Swagger UI a besoin (scripts et styles en ligne, images data:).
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          // Désactivé : sans TLS en développement, cette directive ferait
+          // échouer le chargement des ressources en HTTPS. La production
+          // termine le TLS au niveau du reverse proxy.
+          upgradeInsecureRequests: null,
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
   app.enableCors({ origin: process.env.CORS_ORIGINS?.split(',') ?? [], credentials: true });
   app.setGlobalPrefix('api/v1');
 
