@@ -15,6 +15,7 @@
 BEGIN;
 
 -- Jeu de données minimal
+INSERT INTO parametre_legal (pays) VALUES ('CI') ON CONFLICT (pays) DO NOTHING;
 INSERT INTO agence (id, nom) VALUES ('a0000000-0000-0000-0000-000000000001','Agence Test');
 INSERT INTO utilisateur (id, telephone, mot_de_passe_hash, nom_complet) VALUES
  ('b0000000-0000-0000-0000-000000000001','+2259900000001','h','Bailleur Test'),
