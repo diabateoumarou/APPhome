@@ -25,6 +25,7 @@ jobs:
       JWT_SECRET: ci-secret
       JWT_REFRESH_SECRET: ci-refresh-secret
       CLE_CHIFFREMENT: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+      PSQL_URL: postgresql://immo:immo@localhost:5432/immo_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,6 +39,6 @@ jobs:
       - name: Tests unitaires
         run: npm test -- --coverage
       - name: Tests des garde-fous SQL (plafonds légaux, séquestre, signatures)
-        run: psql "${DATABASE_URL%%\?*}" -v ON_ERROR_STOP=1 -f test/contraintes.test.sql
+        run: psql "$PSQL_URL" -v ON_ERROR_STOP=1 -f test/contraintes.test.sql
       - name: Audit de sécurité des dépendances
         run: npm audit --audit-level=high
