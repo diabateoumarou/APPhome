@@ -38,6 +38,6 @@ jobs:
       - name: Tests unitaires
         run: npm test -- --coverage
       - name: Tests des garde-fous SQL (plafonds légaux, séquestre, signatures)
-        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f test/contraintes.test.sql
+        run: psql "${DATABASE_URL%%\?*}" -v ON_ERROR_STOP=1 -f test/contraintes.test.sql
       - name: Audit de sécurité des dépendances
         run: npm audit --audit-level=high
