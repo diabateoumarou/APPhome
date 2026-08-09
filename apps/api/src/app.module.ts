@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuditModule } from './common/audit/audit.module';
 import { BiensModule } from './modules/biens/biens.module';
+import { AnnoncesModule } from './modules/annonces/annonces.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AuditModule,
     AuthModule,
     BiensModule,
+    AnnoncesModule,
     NotificationsModule,
     // À venir (sprints S3+) : BiensModule, AnnoncesModule, VisitesModule,
     // CandidaturesModule, ContratsModule, PaiementsModule, LitigesModule, ReportingModule
