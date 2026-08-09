@@ -8,6 +8,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AuditModule } from './common/audit/audit.module';
+import { BiensModule } from './modules/biens/biens.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
@@ -16,7 +18,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     // Limitation de débit globale : 100 requêtes / minute / IP
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
+    AuditModule,
     AuthModule,
+    BiensModule,
     NotificationsModule,
     // À venir (sprints S3+) : BiensModule, AnnoncesModule, VisitesModule,
     // CandidaturesModule, ContratsModule, PaiementsModule, LitigesModule, ReportingModule
