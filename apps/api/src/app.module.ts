@@ -14,6 +14,7 @@ import { AnnoncesModule } from './modules/annonces/annonces.module';
 import { MediasModule } from './modules/medias/medias.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { VisitesModule } from './modules/visites/visites.module';
+import { CandidaturesModule } from './modules/candidatures/candidatures.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { VisitesModule } from './modules/visites/visites.module';
     MediasModule,
     NotificationsModule,
     VisitesModule,
-    // À venir : CandidaturesModule, ContratsModule, PaiementsModule,
+    CandidaturesModule,
+    // À venir : ContratsModule, PaiementsModule,
     // LitigesModule, ReportingModule
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
