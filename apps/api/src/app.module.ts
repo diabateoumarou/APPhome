@@ -13,6 +13,7 @@ import { BiensModule } from './modules/biens/biens.module';
 import { AnnoncesModule } from './modules/annonces/annonces.module';
 import { MediasModule } from './modules/medias/medias.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { VisitesModule } from './modules/visites/visites.module';
 
 @Module({
   imports: [
@@ -26,8 +27,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AnnoncesModule,
     MediasModule,
     NotificationsModule,
-    // À venir (sprints S3+) : BiensModule, AnnoncesModule, VisitesModule,
-    // CandidaturesModule, ContratsModule, PaiementsModule, LitigesModule, ReportingModule
+    VisitesModule,
+    // À venir : CandidaturesModule, ContratsModule, PaiementsModule,
+    // LitigesModule, ReportingModule
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
