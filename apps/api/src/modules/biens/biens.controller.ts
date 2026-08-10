@@ -13,7 +13,7 @@ import { Utilisateur } from '../../common/decorators/utilisateur.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import type { UtilisateurConnecte } from '../auth/jwt.strategy';
 import {
-  CreerBienDto, ModifierBienDto, ListerBiensDto, AjouterDocumentBienDto,
+  CreerBienDto, ModifierBienDto, ListerBiensDto,
 } from './dto/bien.dto';
 
 @ApiTags('Biens')
@@ -76,14 +76,4 @@ export class BiensController {
     return this.biens.supprimer(id, utilisateur);
   }
 
-  @Post(':id/documents')
-  @Roles(RoleUtilisateur.proprietaire, RoleUtilisateur.agence, RoleUtilisateur.admin)
-  @ApiOperation({ summary: 'Rattacher un justificatif (titre de propriété, mandat)' })
-  ajouterDocument(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: AjouterDocumentBienDto,
-    @Utilisateur() utilisateur: UtilisateurConnecte,
-  ) {
-    return this.biens.ajouterDocument(id, dto, utilisateur);
-  }
 }
