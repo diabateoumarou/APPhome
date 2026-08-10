@@ -51,7 +51,10 @@ export class GabaritService {
       'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt',
     ];
 
-    const sousMille = (n: number): string => {
+    // `suivi` indique qu'un multiplicateur suit (mille, million…) : « cent »
+    // et « vingt » restent alors invariables — « trois cent mille », non
+    // « trois cents mille ».
+    const sousMille = (n: number, suivi = false): string => {
       if (n === 0) return '';
       if (n < 20) return unites[n];
       if (n < 100) {
@@ -62,13 +65,13 @@ export class GabaritService {
           const base = dizaines[d];
           return u === 0 ? `${base}-dix` : `${base}-${unites[10 + u]}`;
         }
-        if (u === 0) return d === 8 ? 'quatre-vingts' : dizaines[d];
+        if (u === 0) return d === 8 && !suivi ? 'quatre-vingts' : dizaines[d];
         if (u === 1 && d !== 8) return `${dizaines[d]} et un`;
         return `${dizaines[d]}-${unites[u]}`;
       }
       const c = Math.floor(n / 100);
       const reste = n % 100;
-      const prefixe = c === 1 ? 'cent' : `${unites[c]} cent${reste === 0 ? 's' : ''}`;
+      const prefixe = c === 1 ? 'cent' : `${unites[c]} cent${reste === 0 && !suivi ? 's' : ''}`;
       return reste === 0 ? prefixe : `${prefixe} ${sousMille(reste)}`;
     };
 
@@ -91,7 +94,7 @@ export class GabaritService {
         if (singulier === 'mille' && nombre === 1) {
           parties.push('mille');
         } else {
-          parties.push(`${sousMille(nombre)} ${nombre > 1 ? pluriel : singulier}`);
+          parties.push(`${sousMille(nombre, true)} ${nombre > 1 ? pluriel : singulier}`);
         }
         reste %= valeur;
       }
