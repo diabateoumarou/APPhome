@@ -17,6 +17,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { VisitesModule } from './modules/visites/visites.module';
 import { CandidaturesModule } from './modules/candidatures/candidatures.module';
 import { ContratsModule } from './modules/contrats/contrats.module';
+import { PaiementsModule } from './modules/paiements/paiements.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { ContratsModule } from './modules/contrats/contrats.module';
     VisitesModule,
     CandidaturesModule,
     ContratsModule,
-    // À venir : PaiementsModule,
+    PaiementsModule,
+    // À venir :
     // LitigesModule, ReportingModule
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

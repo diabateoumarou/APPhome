@@ -12,7 +12,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
 
   // Helmet reste actif ; la CSP est assouplie uniquement pour les ressources
   // dont Swagger UI a besoin (scripts et styles en ligne, images data:).
