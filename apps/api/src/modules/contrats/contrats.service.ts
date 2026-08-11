@@ -242,15 +242,15 @@ export class ContratsService {
       // Le numéro de pièce est chiffré en base : seul son type figure au bail,
       // le numéro en clair étant produit sur demande justifiée.
       bailleur_piece_identite: identiteBailleur ? `${identiteBailleur.typePiece} vérifiée` : 'vérifiée',
-      bailleur_adresse: contrat.bien.adresse,
+      bailleur_adresse: contrat.bailleur.adresse ?? contrat.bien.adresse,
       bailleur_telephone: contrat.bailleur.telephone,
-      bailleur_email: contrat.bailleur.email ?? '—',
+      bailleur_email: contrat.bailleur.email ?? 'non communiqué',
 
       locataire_nom_complet: contrat.locataire.nomComplet,
       locataire_piece_identite: identiteLocataire ? `${identiteLocataire.typePiece} vérifiée` : 'vérifiée',
-      locataire_adresse: '—',
+      locataire_adresse: contrat.locataire.adresse ?? '—',
       locataire_telephone: contrat.locataire.telephone,
-      locataire_email: contrat.locataire.email ?? '—',
+      locataire_email: contrat.locataire.email ?? 'non communiqué',
 
       bien_adresse: contrat.bien.adresse,
       bien_commune: contrat.bien.commune,

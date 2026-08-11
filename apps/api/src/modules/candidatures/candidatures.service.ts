@@ -204,6 +204,18 @@ export class CandidaturesService {
       );
     }
 
+    // L'adresse sert d'élection de domicile au bail (art. 16) : sans elle,
+    // les notifications contractuelles seraient difficilement opposables.
+    const profil = await this.prisma.utilisateur.findUnique({
+      where: { id: utilisateur.id },
+      select: { adresse: true, commune: true },
+    });
+    if (!profil?.adresse || !profil.commune) {
+      throw new BadRequestException(
+        "Renseignez votre adresse dans votre profil : elle sert d'élection de domicile au contrat de bail.",
+      );
+    }
+
     const annonce = await this.prisma.annonce.findUnique({
       where: { id: dto.annonceId },
       include: {

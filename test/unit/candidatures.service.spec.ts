@@ -87,6 +87,9 @@ describe('CandidaturesService', () => {
         update: jest.fn().mockResolvedValue({ statut: StatutCandidature.acceptee }),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      utilisateur: {
+        findUnique: jest.fn().mockResolvedValue({ adresse: 'Rue L142', commune: 'Cocody' }),
+      },
       motifRefus: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       bien: { update: jest.fn().mockResolvedValue({}) },
       $transaction: jest.fn().mockResolvedValue([0, []]),
@@ -162,6 +165,14 @@ describe('CandidaturesService', () => {
       await expect(
         service.soumettre({ annonceId: 'a1', consentementPartagePieces: true }, LOCATAIRE),
       ).rejects.toThrow(/identite, revenus/);
+      expect(prisma.candidature.create).not.toHaveBeenCalled();
+    });
+
+    it("exige une adresse au profil (election de domicile, art. 16)", async () => {
+      prisma.utilisateur.findUnique.mockResolvedValue({ adresse: null, commune: null });
+      await expect(
+        service.soumettre({ annonceId: 'a1', consentementPartagePieces: true }, LOCATAIRE),
+      ).rejects.toThrow(/élection de domicile/);
       expect(prisma.candidature.create).not.toHaveBeenCalled();
     });
 

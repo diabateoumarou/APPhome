@@ -284,6 +284,9 @@ model Utilisateur {
   email                 String?            @unique @db.VarChar(255)
   motDePasseHash        String             @map("mot_de_passe_hash") @db.VarChar(255)
   nomComplet            String             @map("nom_complet") @db.VarChar(160)
+  /// Domicile déclaré — élection de domicile au contrat (art. 16 du bail).
+  adresse               String?
+  commune               String?            @db.VarChar(80)
   telephoneVerifieLe    DateTime?          @map("telephone_verifie_le") @db.Timestamptz(6)
   emailVerifieLe        DateTime?          @map("email_verifie_le") @db.Timestamptz(6)
   /// Secret TOTP chiffré applicativement (AES-256-GCM) — jamais en clair.

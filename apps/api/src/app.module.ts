@@ -8,6 +8,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ProfilModule } from './modules/profil/profil.module';
 import { AuditModule } from './common/audit/audit.module';
 import { BiensModule } from './modules/biens/biens.module';
 import { AnnoncesModule } from './modules/annonces/annonces.module';
@@ -25,6 +26,7 @@ import { ContratsModule } from './modules/contrats/contrats.module';
     PrismaModule,
     AuditModule,
     AuthModule,
+    ProfilModule,
     BiensModule,
     AnnoncesModule,
     MediasModule,
