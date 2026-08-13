@@ -21,6 +21,7 @@
 import {
   Injectable,
   Inject,
+  forwardRef,
   NotFoundException,
   BadRequestException,
   ConflictException,
@@ -41,6 +42,7 @@ import { randomUUID } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { SmsService } from '../notifications/sms.service';
+import { QuittancesService } from './quittances.service';
 import {
   FOURNISSEUR_PAIEMENT,
   type FournisseurPaiement,
@@ -71,6 +73,8 @@ export class PaiementsService {
     private readonly sms: SmsService,
     private readonly config: ConfigService,
     @Inject(FOURNISSEUR_PAIEMENT) private readonly fournisseur: FournisseurPaiement,
+    @Inject(forwardRef(() => QuittancesService))
+    private readonly quittances: QuittancesService,
   ) {
     const base = (config.get<string>('API_URL_PUBLIQUE') ?? 'http://localhost:3100').replace(
       /\/$/,
@@ -417,6 +421,18 @@ export class PaiementsService {
         echeancesReglees: paiement.echeances.length,
       },
     });
+
+    // La quittance est délivrée automatiquement : obligation du bailleur
+    // (art. 3 du bail) et principal motif de litige évité.
+    if (paiement.contratId) {
+      try {
+        await this.quittances.genererPourPaiement(paiement.id);
+      } catch (e) {
+        // Une quittance non générée n'annule pas un encaissement valide.
+        const motif = e instanceof Error ? e.message : 'erreur inconnue';
+        this.logger.error(`Quittance non générée pour ${referenceInterne} : ${motif}`);
+      }
+    }
 
     return { confirme: true, dejaTraite: false };
   }
