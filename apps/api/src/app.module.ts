@@ -19,6 +19,7 @@ import { VisitesModule } from './modules/visites/visites.module';
 import { CandidaturesModule } from './modules/candidatures/candidatures.module';
 import { ContratsModule } from './modules/contrats/contrats.module';
 import { PaiementsModule } from './modules/paiements/paiements.module';
+import { SequestreModule } from './modules/sequestre/sequestre.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PaiementsModule } from './modules/paiements/paiements.module';
     CandidaturesModule,
     ContratsModule,
     PaiementsModule,
+    SequestreModule,
     // À venir :
     // LitigesModule, ReportingModule
   ],
