@@ -478,3 +478,10 @@
   .piece{flex-direction:column;align-items:stretch;gap:11px}
   .piece label{text-align:center}
 }
+
+/* Confirmation d'enregistrement */
+.message-succes{
+  font-size:13.5px;color:#2F6B45;background:#EBF6EE;
+  padding:11px 14px;border-radius:2px;margin-bottom:14px;
+}
+.champ-form input:disabled{color:var(--encre-doux);cursor:not-allowed}
