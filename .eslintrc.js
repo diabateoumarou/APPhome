@@ -9,7 +9,7 @@ module.exports = {
   extends: ['plugin:@typescript-eslint/recommended'],
   root: true,
   env: { node: true, jest: true },
-  ignorePatterns: ['.eslintrc.js', 'dist', 'node_modules', 'prisma/seed.ts'],
+  ignorePatterns: ['.eslintrc.js', 'dist', 'node_modules', 'apps/web', 'prisma/seed.ts'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

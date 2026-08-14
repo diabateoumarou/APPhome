@@ -601,6 +601,7 @@ export class AnnoncesService {
       },
       select: {
         id: true,
+        bienId: true,
         titre: true,
         description: true,
         transaction: true,
