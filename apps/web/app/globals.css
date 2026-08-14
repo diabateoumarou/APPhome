@@ -373,3 +373,108 @@
   .galerie .principale{grid-row:auto}
   .galerie .secondaire{display:none}
 }
+
+/* ---------- Formulaires et parcours guidés ---------- */
+.formulaire{
+  background:var(--papier);color:var(--encre);border-radius:3px;
+  padding:34px 36px 32px;max-width:480px;margin:34px auto 0;
+}
+.large-formulaire{max-width:620px}
+.formulaire h1{
+  font-family:var(--display);font-weight:600;font-size:27px;
+  letter-spacing:-.02em;color:var(--encre);margin-bottom:8px;line-height:1.15;
+}
+.aide-page{font-size:14.5px;color:var(--encre-doux);margin-bottom:24px;line-height:1.5}
+
+.champ-form{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.champ-form label{
+  font-family:var(--data);font-size:11px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--encre-doux);
+}
+.champ-form input{
+  font-family:var(--corps);font-size:16px;color:var(--encre);
+  background:transparent;border:none;border-bottom:1.5px solid var(--papier-ombre);
+  padding:7px 0;outline:none;transition:border-color .2s;
+}
+.champ-form input:focus{border-bottom-color:var(--or)}
+.indication{font-size:12.5px;color:var(--encre-doux)}
+.saisie-code{
+  font-family:var(--data)!important;font-size:26px!important;
+  letter-spacing:.34em;text-align:center;
+}
+
+.bouton.large{width:100%;padding:13px 18px;font-size:15px;margin-top:6px}
+.formulaire .bouton-ligne{border-color:var(--papier-ombre);color:var(--encre)}
+.formulaire .bouton-ligne:hover{border-color:var(--or);color:var(--or-fonce)}
+
+.message-erreur{
+  font-size:13.5px;color:#A8402A;background:#FBEAE5;
+  padding:11px 14px;border-radius:2px;margin-bottom:14px;line-height:1.45;
+}
+.bascule{font-size:13.5px;color:var(--encre-doux);margin-top:18px;text-align:center}
+.bascule button{
+  background:none;border:none;padding:0;cursor:pointer;
+  font-family:var(--corps);font-size:13.5px;font-weight:600;
+  color:var(--or-fonce);text-decoration:underline;text-underline-offset:3px;
+}
+
+.pastille{
+  display:inline-block;font-family:var(--data);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;
+  background:var(--or);color:var(--lagune-fonce);
+  padding:4px 10px;border-radius:2px;margin-bottom:14px;
+}
+
+.recapitulatif{margin:22px 0}
+.recapitulatif div{
+  display:grid;grid-template-columns:150px 1fr;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--papier-ombre);
+}
+.recapitulatif dt{
+  font-family:var(--data);font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--encre-doux);
+}
+.recapitulatif dd{font-size:15px;color:var(--encre)}
+.recapitulatif a{color:var(--or-fonce);text-decoration:none;font-family:var(--data)}
+
+.avis{
+  background:#FDF4E3;border-left:3px solid var(--or);
+  padding:15px 17px;border-radius:2px;margin-bottom:22px;
+  font-size:13.5px;color:var(--encre-doux);line-height:1.5;
+}
+.avis strong{
+  display:block;font-family:var(--display);font-size:15px;
+  color:var(--encre);margin-bottom:4px;
+}
+.avis .bouton{display:inline-block;font-size:13px;padding:7px 14px}
+
+.pieces{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.piece{
+  display:flex;align-items:center;gap:16px;
+  border:1.5px solid var(--papier-ombre);border-radius:3px;padding:15px 17px;
+}
+.piece.fournie{border-color:#B7CDBE;background:#F4F9F5}
+.piece-texte{flex:1}
+.piece-texte strong{
+  display:block;font-family:var(--display);font-size:15px;
+  font-weight:600;color:var(--encre);margin-bottom:2px;
+}
+.piece-texte span{font-size:13px;color:var(--encre-doux);line-height:1.4}
+.piece label{cursor:pointer;white-space:nowrap;font-size:13.5px;padding:8px 15px}
+
+.consentement{
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--papier-ombre);padding:15px 17px;border-radius:3px;
+  margin-bottom:20px;cursor:pointer;
+}
+.consentement input{margin-top:3px;width:17px;height:17px;accent-color:var(--or-fonce);flex:none}
+.consentement span{font-size:13.5px;color:var(--encre-doux);line-height:1.5}
+
+.formulaire .actions{margin-top:20px;gap:9px}
+
+@media (max-width:620px){
+  .formulaire{padding:26px 22px 24px;margin-top:20px}
+  .recapitulatif div{grid-template-columns:1fr;gap:3px}
+  .piece{flex-direction:column;align-items:stretch;gap:11px}
+  .piece label{text-align:center}
+}

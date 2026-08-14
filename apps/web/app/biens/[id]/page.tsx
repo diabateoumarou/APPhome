@@ -132,7 +132,7 @@ export default async function FicheBien({ params }: { params: Promise<{ id: stri
               </div>
             )}
 
-            {annonce.bienId && <Creneaux bienId={annonce.bienId} />}
+            <div id="creneaux">{annonce.bienId && <Creneaux bienId={annonce.bienId} annonceId={annonce.id} />}</div>
           </div>
 
           <aside className="aparte">
@@ -161,10 +161,10 @@ export default async function FicheBien({ params }: { params: Promise<{ id: stri
             {!enVente && <Releve annonce={annonce} />}
 
             <div className="actions">
-              <Link href={`/biens/${annonce.id}/visite`} className="bouton bouton-or">
+              <Link href="#creneaux" className="bouton bouton-or">
                 Réserver une visite
               </Link>
-              <Link href={`/biens/${annonce.id}/dossier`} className="bouton bouton-ligne">
+              <Link href={`/dossier?annonce=${annonce.id}`} className="bouton bouton-ligne">
                 Déposer mon dossier
               </Link>
             </div>

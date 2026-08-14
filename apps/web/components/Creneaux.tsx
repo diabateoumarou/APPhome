@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { lireCreneaux, formaterDate, formaterHeure, type Creneau } from '@/lib/api';
 
-export function Creneaux({ bienId }: { bienId: string }) {
+export function Creneaux({ bienId, annonceId }: { bienId: string; annonceId: string }) {
   const [creneaux, setCreneaux] = useState<Creneau[] | null>(null);
   const [choisi, setChoisi] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function Creneaux({ bienId }: { bienId: string }) {
       ))}
 
       {choisi && (
-        <a href={`/connexion?visite=${choisi}`} className="bouton bouton-or" style={{ marginTop: 6 }}>
+        <a href={`/visite?creneau=${choisi}&annonce=${annonceId}`} className="bouton bouton-or" style={{ marginTop: 6 }}>
           Confirmer ce créneau
         </a>
       )}
