@@ -40,7 +40,7 @@ export default function RacineLayout({ children }: { children: React.ReactNode }
               <Link href="/">Louer</Link>
               <Link href="/?transaction=vente">Acheter</Link>
               <Link href="/publier">Publier un bien</Link>
-              <Link href="/profil">Mon espace</Link>
+              <Link href="/espace">Espace bailleur</Link>
               <Link href="/connexion" className="bouton bouton-ligne">
                 Se connecter
               </Link>
